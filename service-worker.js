@@ -1,4 +1,4 @@
-const CACHE = 'bond-hd-v4';
+const CACHE = 'bond-hd-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -21,7 +21,5 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then(res => res || fetch(e.request))
-  );
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
