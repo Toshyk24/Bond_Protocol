@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BOND HEAVY DUTY — Антон (PWA)</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1216">
+<style>
+  body{margin:0;background:#0f1216;color:#e8edf3;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
+  .wrap{max-width:960px;margin:0 auto;padding:16px}
+  h1{margin:0 0 4px 0;font-size:20px}
+  .muted{color:#9aa7b3}
+  table{width:100%;border-collapse:collapse;margin:8px 0 16px 0}
+  th,td{border-bottom:1px solid #263242;padding:8px;vertical-align:middle}
+  th{color:#c9d4df;font-size:13px;text-transform:uppercase;letter-spacing:.6px}
+  input[type="number"],input[type="text"]{width:100%;background:#0e1319;border:1px solid #263242;color:#e8edf3;padding:8px;border-radius:8px;outline:none}
+  .tabs{display:flex;gap:8px;margin:10px 0}
+  .tab{padding:8px 12px;border:1px solid #263242;border-radius:999px;cursor:pointer}
+  .tab.active{border-color:#2dd4bf;box-shadow:0 0 0 2px rgba(45,212,191,.15) inset}
+  .day{display:none}.day.active{display:block}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .btn{padding:8px 12px;border:1px solid #263242;border-radius:10px;cursor:pointer}
+</style>
+<script>
+  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js'))}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <h1>BOND HEAVY DUTY — силовые дни</h1>
+  <div class="muted">HIT: 1 разминочный + 1 рабочий сет до отказа. Данные сохраняются на устройстве.</div>
+
+  <div class="toolbar">
+    <div>Дата: <input id="logDate" type="date"></div>
+    <div class="btn" id="exportBtn">Экспорт JSON</div>
+    <label class="btn">Импорт JSON <input id="importInput" type="file" accept="application/json" style="display:none"></label>
+    <div class="btn" id="copyDayBtn">Скопировать прошлые веса</div>
+    <div class="btn" id="resetBtn">Сброс текущего дня</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-day="upper">День 1 — Верх</div>
+    <div class="tab" data-day="lower">День 2 — Низ</div>
+  </div>
+
+  <section id="upper" class="day active">
+    <h3>Верх тела</h3>
+    <table data-ex="upper_press_incline"><thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead><tbody>
+      <tr><td>Разминка</td><td>~60%</td><td><input type="number" step="0.5"></td><td><input type="number" min="1" max="12"></td><td><input type="checkbox"></td></tr>
+      <tr><td>Рабочий</td><td>6–8 отказ</td><td><input type="number" step="0.5" value="20"></td><td><input type="number" value="7"></td><td><input type="checkbox"></td></tr>
+    </tbody></table>
+
+    <table data-ex="upper_latpull_pullups"><thead><tr><th>Сет</th><th>Цель</th><th>Вес/вариант</th><th>Повторы</th><th>Вып.</th></tr></thead><tbody>
+      <tr><td>Разминка</td><td>легко</td><td><input type="text" value="блок 30"></td><td><input type="number" value="10"></td><td><input type="checkbox"></td></tr>
+      <tr><td>Рабочий</td><td>8–10 отказ</td><td><input type="text" value="блок 40 / подтяг. св.вес"></td><td><input type="number" value="9"></td><td><input type="checkbox"></td></tr>
+    </tbody></table>
+
+    <table data-ex="upper_chest_machine"><thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead><tbody>
+      <tr><td>Разминка</td><td>контроль</td><td><input type="number" step="5" value="55"></td><td><input type="number" value="10"></td><td><input type="checkbox"></td></tr>
+      <tr><td>Рабочий</td><td>6–8 отказ</td><td><input type="number" step="5" value="65"></td><td><input type="number" value="8"></td><td><input type="checkbox"></td></tr>
+    </tbody></table>
+
+    <table data-ex="upper_row_cable"><thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead><tbody>
+      <tr><td>Разминка</td><td>мышц. связь</td><td><input type="number" step="5" value="45"></td><td><input type="number" value="10"></td><td><input type="checkbox"></td></tr>
+      <tr><td>Рабочий</td><td>8–10 отказ</td><td><input type="number" step="5" value="55"></td><td><input type="number" value="9"></td><td><input type="checkbox"></td></tr>
+    </tbody></table>
+  </section>
+
+  <section id="lower" class="day">
+    <h3>Низ + корпус</h3>
+    <table data-ex="lower_squat_legpress"><thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead><tbody>
+      <tr><td>Разминка</td><td>~60%</td><td><input type="number" step="2.5" value="30"></td><td><input type="number" value="10"></td><td><input type="checkbox"></td></tr>
+      <tr><td>Рабочий</td><td>8–10 отказ</td><td><input type="number" step="2.5" value="40"></td><td><input type="number" value="10"></td><td><input type="checkbox"></td></tr>
+    </tbody></table>
+
+    <table data-ex="lower_rdl"><thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead><tbody>
+      <tr><td>Разминка</td><td>контроль</td><td><input type="number" step="2.5" value="25"></td><td><input type="number" value="8"></td><td><input type="checkbox"></td></tr>
+      <tr><td>Рабочий</td><td>8 отказ</td><td><input type="number" step="2.5" value="35"></td><td><input type="number" value="8"></td><td><input type="checkbox"></td></tr>
+    </tbody></table>
+
+    <table data-ex="lower_calves"><thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead><tbody>
+      <tr><td>Разминка</td><td>контроль</td><td><input type="number" step="2.5" value="20"></td><td><input type="number" value="12"></td><td><input type="checkbox"></td></tr>
+      <tr><td>Рабочий</td><td>15–20 отказ</td><td><input type="number" step="2.5" value="30"></td><td><input type="number" value="16"></td><td><input type="checkbox"></td></tr>
+    </tbody></table>
+  </section>
+</div>
+
+<script>
+(function(){
+  const tabs = document.querySelectorAll('.tab');
+  const days = document.querySelectorAll('.day');
+  const logDate = document.getElementById('logDate');
+  const exportBtn = document.getElementById('exportBtn');
+  const importInput = document.getElementById('importInput');
+  const resetBtn = document.getElementById('resetBtn');
+  const copyDayBtn = document.getElementById('copyDayBtn');
+
+  function activeDayId(){ return document.querySelector('.tab.active').dataset.day }
+  function storeKey(day, date){ return `bondHD.${day}.${date}` }
+  function lastKey(day){ return `bondHD.${day}.LAST` }
+  function todayISO(){
+    const d = new Date(); const off = d.getTimezoneOffset();
+    return new Date(d.getTime()-off*60000).toISOString().slice(0,10);
+  }
+  logDate.value = todayISO();
+
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    tabs.forEach(x=>x.classList.remove('active')); t.classList.add('active');
+    days.forEach(d=>d.classList.remove('active')); document.getElementById(t.dataset.day).classList.add('active');
+    loadForDate();
+  }));
+
+  function readForm(day){
+    const root = document.getElementById(day);
+    const tables = root.querySelectorAll('table[data-ex]');
+    const data = {};
+    tables.forEach(tb=>{
+      const ex = tb.dataset.ex; data[ex]=[];
+      tb.querySelectorAll('tbody tr').forEach(r=>{
+        const tds = r.querySelectorAll('td');
+        data[ex].push({
+          set: tds[0].innerText.trim(),
+          goal: tds[1].innerText.trim(),
+          weight: tds[2].querySelector('input')?.value ?? '',
+          reps: tds[3].querySelector('input')?.value ?? '',
+          done: tds[4].querySelector('input[type="checkbox"]')?.checked ?? false
+        });
+      });
+    });
+    return data;
+  }
+
+  function writeForm(day, data){
+    if(!data) return;
+    const root = document.getElementById(day);
+    const tables = root.querySelectorAll('table[data-ex]');
+    tables.forEach(tb=>{
+      const ex = tb.dataset.ex;
+      const rows = tb.querySelectorAll('tbody tr');
+      const arr = data[ex] || [];
+      rows.forEach((r,i)=>{
+        const tds = r.querySelectorAll('td');
+        const item = arr[i]; if(!item) return;
+        const w = tds[2].querySelector('input'); if(w) w.value = item.weight ?? '';
+        const reps = tds[3].querySelector('input'); if(reps) reps.value = item.reps ?? '';
+        const ch = tds[4].querySelector('input[type="checkbox"]'); if(ch) ch.checked = !!item.done;
+      });
+    });
+  }
+
+  function saveForDate(){
+    const day = activeDayId();
+    const date = logDate.value || todayISO();
+    const data = readForm(day);
+    localStorage.setItem(storeKey(day,date), JSON.stringify(data));
+    localStorage.setItem(lastKey(day), JSON.stringify(data));
+  }
+
+  function loadForDate(){
+    const day = activeDayId();
+    const date = logDate.value || todayISO();
+    const raw = localStorage.getItem(storeKey(day,date));
+    if(raw){ writeForm(day, JSON.parse(raw)); }
+    else {
+      const last = localStorage.getItem(lastKey(day));
+      if(last){
+        const data = JSON.parse(last);
+        Object.keys(data).forEach(ex=>data[ex].forEach(s=>s.done=false));
+        writeForm(day,data);
+      }
+    }
+  }
+
+  document.body.addEventListener('input', e=>{ if(e.target.matches('input')) saveForDate(); });
+  document.body.addEventListener('change', e=>{
+    if(e.target.matches('input[type="checkbox"], input[type="date"]')) { if(e.target.type==='date') loadForDate(); saveForDate(); }
+  });
+
+  exportBtn.addEventListener('click', ()=>{
+    const all = {};
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('bondHD.')) all[k] = localStorage.getItem(k);
+    }
+    const blob = new Blob([JSON.stringify(all,null,2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `bond_hd_export_${todayISO()}.json`; a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  importInput.addEventListener('change', async (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const text = await file.text(); const obj = JSON.parse(text);
+    Object.keys(obj).forEach(k=>{ if(k.startsWith('bondHD.')) localStorage.setItem(k, obj[k]); });
+    loadForDate(); importInput.value='';
+  });
+
+  copyDayBtn.addEventListener('click', ()=>{
+    const day = activeDayId(); const date = logDate.value || todayISO();
+    const keys = Object.keys(localStorage).filter(k=>k.startsWith(`bondHD.${day}.20`));
+    const prev = keys.filter(k=>k.split('.').pop() < date).sort().pop();
+    if(prev){
+      const data = JSON.parse(localStorage.getItem(prev));
+      Object.keys(data).forEach(ex=>data[ex].forEach(s=>s.done=false));
+      writeForm(day,data); saveForDate();
+    }
+  });
+
+  const d = new Date(); const off = d.getTimezoneOffset();
+  document.getElementById('logDate').value = new Date(d.getTime()-off*60000).toISOString().slice(0,10);
+  loadForDate();
+})();
+</script>
+</body>
+</html>
