@@ -1,4 +1,4 @@
-const CACHE = 'bond-hd-v2';
+const CACHE = 'bond-hd-v3';
 const ASSETS = [
   './',
   './index.html',
