@@ -2,56 +2,87 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <title>BOND HEAVY DUTY — силовые дни (PWA)</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1216">
+
 <style>
+  /* ===== БАЗА / iOS ФИКСЫ ===== */
   :root{
     --bg:#0f1216;--panel:#161a20;--ink:#e8edf3;--muted:#9aa7b3;
     --accent:#2dd4bf;--accent2:#60a5fa;--ok:#22c55e;--warn:#f59e0b;
-    --danger:#ef4444;--line:#263242
+    --danger:#ef4444;--line:#263242;
+    /* Безопасные отступы для iOS «чёлки» и жестовой панели */
+    --s-top: env(safe-area-inset-top);
+    --s-right: env(safe-area-inset-right);
+    --s-bottom: env(safe-area-inset-bottom);
+    --s-left: env(safe-area-inset-left);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
+  html{-webkit-text-size-adjust:100%}
   body{
-    margin:0;background:linear-gradient(180deg,#0d1117,#0f1319 45%,#10151b);
-    color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial
+    margin:0;
+    background:linear-gradient(180deg,#0d1117,#0f1319 45%,#10151b);
+    color:var(--ink);
+    font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
+    overflow-x:hidden; /* убираем горизонтальный скролл на iOS */
+    padding-right:0; /* фиксим «шаг» вправо при появлении скроллбара */
   }
+
+  /* ===== ШАПКА / ТУЛБАР ===== */
   header.topbar{
-    position:sticky;top:0;z-index:10;background:rgba(15,18,22,.9);
-    backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid var(--line)
+    position:sticky;top:0;z-index:10;
+    background:rgba(15,18,22,.92);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--line);
+    padding-top:var(--s-top); /* safe-area сверху */
   }
-  .wrap{max-width:1100px;margin:0 auto;padding:14px 18px}
+  .wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding:14px calc(18px + var(--s-right)) calc(14px + var(--s-bottom)) calc(18px + var(--s-left));
+  }
   h1{font-size:22px;margin:0 0 6px 0;letter-spacing:.3px}
   .sub{color:var(--muted);font-size:14px;margin-top:2px}
-  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+
+  .toolbar{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px
+  }
   .toolbar > *{
     background:var(--panel);border:1px solid var(--line);color:var(--ink);
-    padding:10px 12px;border-radius:12px
+    padding:10px 12px;border-radius:12px;min-height:44px;
   }
-  input[type="date"]{background:transparent;border:none;color:var(--ink);font-size:16px}
-  .btn{cursor:pointer;user-select:none}
+  input[type="date"]{
+    background:transparent;border:none;color:var(--ink);font-size:16px;
+    min-width:10ch; /* не схлопывается на iOS */
+  }
+  .btn{cursor:pointer;user-select:none;touch-action:manipulation}
   .btn:hover{border-color:var(--accent2)}
   .btn.ok{border-color:var(--ok);color:#d1fae5}
   .btn.warn{border-color:var(--warn);color:#fff7ed}
   .btn.danger{border-color:var(--danger);color:#fee2e2}
 
+  /* ===== ТАБЫ ===== */
   .tabs{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   .tab{
     padding:10px 14px;border-radius:999px;border:1px solid var(--line);
-    background:var(--panel);cursor:pointer;color:var(--ink)
+    background:var(--panel);cursor:pointer;color:var(--ink);min-height:40px
   }
   .tab.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(45,212,191,.12) inset}
 
+  /* ===== КОНТЕНТ ===== */
   main{max-width:1100px;margin:14px auto 90px auto;padding:0 18px}
   .day{display:none}.day.active{display:block}
 
   .block{
     background:var(--panel);border:1px solid var(--line);border-radius:16px;margin:18px 0;overflow:hidden
   }
-  .block header{
-    display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#12161c;border-bottom:1px solid var(--line)
+  .block > header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 14px;background:#12161c;border-bottom:1px solid var(--line)
   }
   .muted{color:var(--muted)}
   .tag{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:#cfe9ff;background:#0d1726}
@@ -59,15 +90,19 @@
 
   .exercises{padding:10px}
   .panel{border:1px dashed var(--line);border-radius:14px;padding:10px;margin:10px 0;background:#0f141b}
-  .ex-title{font-weight:700;margin:2px 0 8px 0;display:flex;align-items:center;gap:8px}
+  .ex-title{font-weight:700;margin:2px 0 8px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .ex-title small{color:var(--muted);font-weight:500}
 
-  table{width:100%;border-collapse:collapse}
+  /* ===== ТАБЛИЦЫ (не обрезаются) ===== */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table-wrap::-webkit-scrollbar{height:8px}
+  table{width:100%;border-collapse:collapse;min-width:560px} /* чтобы колонки не ломались */
   th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
   th{color:#c9d4df;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.6px}
   td small{color:var(--muted)}
   input[type="number"], input[type="text"]{
-    width:100%;background:#0e1319;border:1px solid var(--line);color:var(--ink);
+    width:-webkit-fill-available; /* iOS Safari */
+    max-width:100%;background:#0e1319;border:1px solid var(--line);color:var(--ink);
     padding:10px;border-radius:10px;outline:none;font-size:16px
   }
   input[type="number"]::-webkit-outer-spin-button,
@@ -75,15 +110,16 @@
   .setchk{display:flex;align-items:center;gap:8px;white-space:nowrap}
   .setchk input[type="checkbox"]{width:22px;height:22px}
 
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
   @media (max-width:900px){
     .grid2{grid-template-columns:1fr}
-    /* НИЧЕГО важного не скрываем: заголовки упражнений остаются */
   }
 
-  .sumline{display:flex;gap:16px;align-items:center;color:var(--muted);padding:12px 14px;border-top:1px dashed var(--line)}
-  .footer{position:fixed;bottom:8px;left:0;right:0;display:flex;justify-content:center}
+  .sumline{display:flex;gap:16px;flex-wrap:wrap;align-items:center;color:var(--muted);padding:12px 14px;border-top:1px dashed var(--line)}
+  .footer{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;padding-bottom:var(--s-bottom)}
   .footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+  /* Печать */
   .print-note{display:none}
   @media print{
     header.topbar,.footer,.tabs,.toolbar{display:none !important}
@@ -92,9 +128,14 @@
     .print-note{display:block;color:#666;margin:8px 0 0 0}
     input,button{border:1px solid #000}
   }
+
+  /* Доп. iOS-детект для мелких ньюансов */
+  @supports (-webkit-touch-callout: none) {
+    .wrap{padding-left:calc(18px + var(--s-left));padding-right:calc(18px + var(--s-right));}
+  }
 </style>
+
 <script>
-  // Регистрация SW
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js'));
   }
@@ -105,11 +146,9 @@
     <div class="wrap">
       <h1>BOND HEAVY DUTY — силовые дни</h1>
       <div class="sub">HIT: 1 разминочный + 1 рабочий сет до отказа • темп 4с вверх / 4с вниз • офлайн + автосохранение</div>
+
       <div class="toolbar">
-        <div>
-          <span class="muted">Дата:</span>
-          <input id="logDate" type="date" aria-label="Дата тренировки">
-        </div>
+        <div><span class="muted">Дата:</span> <input id="logDate" type="date" aria-label="Дата тренировки"></div>
         <div class="btn" id="exportBtn" role="button">Экспорт JSON</div>
         <label class="btn" role="button" aria-label="Импорт JSON">
           Импорт JSON
@@ -119,6 +158,7 @@
         <div class="btn danger" id="resetBtn" role="button">Сброс текущего дня</div>
         <div class="btn ok" role="button" onclick="window.print()">Печать</div>
       </div>
+
       <div class="tabs" role="tablist">
         <div class="tab active" data-day="upper" role="tab" aria-selected="true">День 1 — Верх</div>
         <div class="tab" data-day="lower" role="tab" aria-selected="false">День 2 — Низ + Кор</div>
@@ -139,160 +179,165 @@
         <div class="exercises">
           <div class="grid2">
 
-            <!-- Incline DB Press -->
             <div class="panel">
               <div class="ex-title">1️⃣ Жим гантелей под углом (15–30°) <small>цель: 6–8 до отказа</small></div>
-              <table data-ex="upper_press_incline" aria-label="Жим гантелей под углом">
-                <thead><tr>
-                  <th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th>
-                </tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>~60% рабочего</small></td>
-                    <td><input type="number" step="0.5" inputmode="decimal"></td>
-                    <td><input type="number" step="1" min="1" max="12" inputmode="numeric"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Жим наклон — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>6–8 отказ</small></td>
-                    <td><input type="number" step="0.5" value="20" inputmode="decimal"></td>
-                    <td><input type="number" step="1" min="1" max="12" value="7" inputmode="numeric"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Жим наклон — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="upper_press_incline" aria-label="Жим гантелей под углом">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>~60% рабочего</small></td>
+                      <td><input type="number" step="0.5" inputmode="decimal"></td>
+                      <td><input type="number" step="1" min="1" max="12" inputmode="numeric"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Жим наклон — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>6–8 отказ</small></td>
+                      <td><input type="number" step="0.5" value="20" inputmode="decimal"></td>
+                      <td><input type="number" step="1" min="1" max="12" value="7" inputmode="numeric"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Жим наклон — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- Lat Pull / Pull-ups -->
             <div class="panel">
               <div class="ex-title">2️⃣ Тяга верхнего блока / подтягивания <small>цель: 8–10</small></div>
-              <table data-ex="upper_latpull_pullups" aria-label="Тяга верхнего блока или подтягивания">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес/вариант</th><th>Повторы</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>легко</small></td>
-                    <td><input type="text" value="блок 30"></td>
-                    <td><input type="number" min="1" max="20" value="10"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Тяга верх — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>8–10 отказ</small></td>
-                    <td><input type="text" value="блок 40 / подтяг. св.вес"></td>
-                    <td><input type="number" min="1" max="20" value="9"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Тяга верх — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="upper_latpull_pullups" aria-label="Тяга верхнего блока или подтягивания">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес/вариант</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>легко</small></td>
+                      <td><input type="text" value="блок 30"></td>
+                      <td><input type="number" min="1" max="20" value="10"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Тяга верх — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>8–10 отказ</small></td>
+                      <td><input type="text" value="блок 40 / подтяг. св.вес"></td>
+                      <td><input type="number" min="1" max="20" value="9"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Тяга верх — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- Chest Machine -->
             <div class="panel">
               <div class="ex-title">3️⃣ Жим тренажёр (грудь) <small>цель: 6–8</small></div>
-              <table data-ex="upper_chest_machine" aria-label="Жим тренажёр грудь">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>контроль</small></td>
-                    <td><input type="number" step="5" value="55"></td>
-                    <td><input type="number" value="10"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Жим трен — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>6–8 отказ</small></td>
-                    <td><input type="number" step="5" value="65"></td>
-                    <td><input type="number" value="8"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Жим трен — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="upper_chest_machine" aria-label="Жим тренажёр грудь">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>контроль</small></td>
+                      <td><input type="number" step="5" value="55"></td>
+                      <td><input type="number" value="10"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Жим трен — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>6–8 отказ</small></td>
+                      <td><input type="number" step="5" value="65"></td>
+                      <td><input type="number" value="8"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Жим трен — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- Cable Row -->
             <div class="panel">
               <div class="ex-title">4️⃣ Тяга горизонтального троса <small>цель: 8–10</small></div>
-              <table data-ex="upper_row_cable" aria-label="Тяга горизонтального троса">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>мышц. связь</small></td>
-                    <td><input type="number" step="5" value="45"></td>
-                    <td><input type="number" value="10"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Тяга трос — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>8–10 отказ</small></td>
-                    <td><input type="number" step="5" value="55"></td>
-                    <td><input type="number" value="9"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Тяга трос — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="upper_row_cable" aria-label="Тяга горизонтального троса">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>мышц. связь</small></td>
+                      <td><input type="number" step="5" value="45"></td>
+                      <td><input type="number" value="10"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Тяга трос — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>8–10 отказ</small></td>
+                      <td><input type="number" step="5" value="55"></td>
+                      <td><input type="number" value="9"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Тяга трос — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- DB Shoulder Press -->
             <div class="panel">
               <div class="ex-title">5️⃣ Армейский жим гантелей <small>цель: 6–8</small></div>
-              <table data-ex="upper_shoulder_dbpress" aria-label="Армейский жим гантелей">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>легко</small></td>
-                    <td><input type="number" step="0.5" value="12.5"></td>
-                    <td><input type="number" value="8"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Жим гант — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>6–8 отказ</small></td>
-                    <td><input type="number" step="0.5" value="15"></td>
-                    <td><input type="number" value="8"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Жим гант — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="upper_shoulder_dbpress" aria-label="Армейский жим гантелей">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>легко</small></td>
+                      <td><input type="number" step="0.5" value="12.5"></td>
+                      <td><input type="number" value="8"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Жим гант — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>6–8 отказ</small></td>
+                      <td><input type="number" step="0.5" value="15"></td>
+                      <td><input type="number" value="8"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Жим гант — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- Triceps Rope -->
             <div class="panel">
               <div class="ex-title">6️⃣ Трицепс трос (верёвка) <small>цель: 10–12</small></div>
-              <table data-ex="upper_triceps_rope" aria-label="Трицепс на тросе">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>чисто</small></td>
-                    <td><input type="number" step="2.5" value="20"></td>
-                    <td><input type="number" value="10"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Трицепс — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>10–12 отказ</small></td>
-                    <td><input type="number" step="2.5" value="25"></td>
-                    <td><input type="number" value="11"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Трицепс — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="upper_triceps_rope" aria-label="Трицепс на тросе">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>чисто</small></td>
+                      <td><input type="number" step="2.5" value="20"></td>
+                      <td><input type="number" value="10"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Трицепс — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>10–12 отказ</small></td>
+                      <td><input type="number" step="2.5" value="25"></td>
+                      <td><input type="number" value="11"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Трицепс — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- Biceps Bar -->
             <div class="panel">
               <div class="ex-title">7️⃣ Бицепс штанга (EZ) <small>цель: 8–10</small></div>
-              <table data-ex="upper_biceps_bar" aria-label="Бицепс штанга EZ">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>контроль</small></td>
-                    <td><input type="number" step="2.5" value="15"></td>
-                    <td><input type="number" value="8"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Бицепс — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>8–10 отказ</small></td>
-                    <td><input type="number" step="2.5" value="20"></td>
-                    <td><input type="number" value="8"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Бицепс — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="upper_biceps_bar" aria-label="Бицепс штанга EZ">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>контроль</small></td>
+                      <td><input type="number" step="2.5" value="15"></td>
+                      <td><input type="number" value="8"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Бицепс — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>8–10 отказ</small></td>
+                      <td><input type="number" step="2.5" value="20"></td>
+                      <td><input type="number" value="8"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Бицепс — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
           </div>
@@ -315,92 +360,96 @@
         <div class="exercises">
           <div class="grid2">
 
-            <!-- Squat / Leg Press -->
             <div class="panel">
               <div class="ex-title">1️⃣ Присед со штангой / жим ногами <small>цель: 8–10</small></div>
-              <table data-ex="lower_squat_legpress" aria-label="Присед или жим ногами">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>~60%</small></td>
-                    <td><input type="number" step="2.5" value="30"></td>
-                    <td><input type="number" value="10"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Присед — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>8–10 отказ</small></td>
-                    <td><input type="number" step="2.5" value="40"></td>
-                    <td><input type="number" value="10"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Присед — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="lower_squat_legpress" aria-label="Присед или жим ногами">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>~60%</small></td>
+                      <td><input type="number" step="2.5" value="30"></td>
+                      <td><input type="number" value="10"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Присед — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>8–10 отказ</small></td>
+                      <td><input type="number" step="2.5" value="40"></td>
+                      <td><input type="number" value="10"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Присед — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- RDL -->
             <div class="panel">
               <div class="ex-title">2️⃣ Румынская тяга <small>цель: 8</small></div>
-              <table data-ex="lower_rdl" aria-label="Румынская тяга">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>контроль</small></td>
-                    <td><input type="number" step="2.5" value="25"></td>
-                    <td><input type="number" value="8"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="РТ — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>8 отказ</small></td>
-                    <td><input type="number" step="2.5" value="35"></td>
-                    <td><input type="number" value="8"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="РТ — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="lower_rdl" aria-label="Румынская тяга">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>контроль</small></td>
+                      <td><input type="number" step="2.5" value="25"></td>
+                      <td><input type="number" value="8"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="РТ — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>8 отказ</small></td>
+                      <td><input type="number" step="2.5" value="35"></td>
+                      <td><input type="number" value="8"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="РТ — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- Calves -->
             <div class="panel">
               <div class="ex-title">3️⃣ Подъём на носки (икры) <small>цель: 15–20</small></div>
-              <table data-ex="lower_calves" aria-label="Икроножные">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Разминка</td><td><small>контроль</small></td>
-                    <td><input type="number" step="2.5" value="20"></td>
-                    <td><input type="number" value="12"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Икры — разминка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Рабочий</td><td><small>15–20 отказ</small></td>
-                    <td><input type="number" step="2.5" value="30"></td>
-                    <td><input type="number" value="16"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Икры — рабочий выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="lower_calves" aria-label="Икроножные">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес (кг)</th><th>Повторы</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Разминка</td><td><small>контроль</small></td>
+                      <td><input type="number" step="2.5" value="20"></td>
+                      <td><input type="number" value="12"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Икры — разминка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Рабочий</td><td><small>15–20 отказ</small></td>
+                      <td><input type="number" step="2.5" value="30"></td>
+                      <td><input type="number" value="16"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Икры — рабочий выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <!-- Core -->
             <div class="panel">
               <div class="ex-title">4️⃣ Кор: планка + вакуум</div>
-              <table data-ex="lower_core_plank" aria-label="Планка и вакуум">
-                <thead><tr><th>Сет</th><th>Цель</th><th>Вес/сек</th><th>Повторы/сек</th><th>Вып.</th></tr></thead>
-                <tbody>
-                  <tr>
-                    <td>Планка</td><td><small>40–60 сек</small></td>
-                    <td><input type="text" value="св. вес"></td>
-                    <td><input type="text" value="45 сек"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Планка выполнено"></td>
-                  </tr>
-                  <tr>
-                    <td>Вакуум</td><td><small>3–5 серий</small></td>
-                    <td><input type="text" value="дыхание"></td>
-                    <td><input type="text" value="3×10 сек"></td>
-                    <td class="setchk"><input type="checkbox" aria-label="Вакуум выполнено"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="table-wrap">
+                <table data-ex="lower_core_plank" aria-label="Планка и вакуум">
+                  <thead><tr><th>Сет</th><th>Цель</th><th>Вес/сек</th><th>Повторы/сек</th><th>Вып.</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>Планка</td><td><small>40–60 сек</small></td>
+                      <td><input type="text" value="св. вес"></td>
+                      <td><input type="text" value="45 сек"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Планка выполнено"></td>
+                    </tr>
+                    <tr>
+                      <td>Вакуум</td><td><small>3–5 серий</small></td>
+                      <td><input type="text" value="дыхание"></td>
+                      <td><input type="text" value="3×10 сек"></td>
+                      <td class="setchk"><input type="checkbox" aria-label="Вакуум выполнено"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
           </div>
@@ -415,15 +464,14 @@
 
   <div class="footer">
     <div class="wrap">
-      <span class="tag">Правило темпа: 4с вверх / 4с вниз</span>
-      <span class="tag">Достиг верхней границы повторов → увеличь вес в след. раз</span>
+      <span class="tag">Темп: 4с вверх / 4с вниз</span>
+      <span class="tag">Достиг верхней границы повторов → ↑ вес в след. раз</span>
     </div>
   </div>
 
 <script>
 (function(){
-  // ===== утилиты хранилища =====
-  const VERSION = 'v2';
+  const VERSION = 'v3';
   const tabs = document.querySelectorAll('.tab');
   const days = document.querySelectorAll('.day');
   const logDate = document.getElementById('logDate');
@@ -439,30 +487,24 @@
     const d = new Date(); const off = d.getTimezoneOffset();
     return new Date(d.getTime()-off*60000).toISOString().slice(0,10);
   }
-
-  // init date
   logDate.value = todayISO();
 
-  // tabs
   tabs.forEach(t=>{
     t.addEventListener('click', ()=>{
       tabs.forEach(x=>{x.classList.remove('active'); x.setAttribute('aria-selected','false')});
       t.classList.add('active'); t.setAttribute('aria-selected','true');
       days.forEach(d=>d.classList.remove('active'));
       document.getElementById(t.dataset.day).classList.add('active');
-      loadForDate();
-      updateCounters();
+      loadForDate(); updateCounters();
     });
   });
 
-  // read/write form
   function readForm(day){
     const root = document.getElementById(day);
     const tables = root.querySelectorAll('table[data-ex]');
     const data = {};
     tables.forEach(tb=>{
-      const ex = tb.dataset.ex;
-      data[ex] = [];
+      const ex = tb.dataset.ex; data[ex]=[];
       tb.querySelectorAll('tbody tr').forEach(r=>{
         const tds = r.querySelectorAll('td');
         data[ex].push({
@@ -516,24 +558,19 @@
         Object.keys(data).forEach(ex=>data[ex].forEach(s=>s.done=false));
         writeForm(day,data);
       } else {
-        // Если совсем нет записей — просто очистим чекбоксы
         document.querySelectorAll('#'+day+' tbody input[type="checkbox"]').forEach(c=>c.checked=false);
       }
     }
   }
 
-  // autosave
-  document.body.addEventListener('input', (e)=>{
-    if(e.target.matches('input')) saveForDate();
-  });
-  document.body.addEventListener('change', (e)=>{
+  document.body.addEventListener('input', e=>{ if(e.target.matches('input')) saveForDate(); });
+  document.body.addEventListener('change', e=>{
     if(e.target.matches('input[type="checkbox"], input[type="date"]')) {
       if(e.target.type==='date') loadForDate();
       saveForDate();
     }
   });
 
-  // export
   exportBtn.addEventListener('click', ()=>{
     const all = {};
     for(let i=0;i<localStorage.length;i++){
@@ -544,35 +581,26 @@
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `bond_hd_export_${todayISO()}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    a.click(); URL.revokeObjectURL(a.href);
   });
 
-  // import
   importInput.addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const text = await file.text();
-    const obj = JSON.parse(text);
+    const file = e.target.files[0]; if(!file) return;
+    const text = await file.text(); const obj = JSON.parse(text);
     Object.keys(obj).forEach(k=>{
       if(k.startsWith('bondHD.')) localStorage.setItem(k, obj[k]);
     });
-    loadForDate();
-    updateCounters();
-    importInput.value = '';
+    loadForDate(); updateCounters(); importInput.value='';
   });
 
-  // copy previous weights
   copyDayBtn.addEventListener('click', ()=>{
-    const day = activeDayId();
-    const date = logDate.value || todayISO();
+    const day = activeDayId(); const date = logDate.value || todayISO();
     const keys = Object.keys(localStorage).filter(k=>k.startsWith(`bondHD.${VERSION}.${day}.20`));
     const prev = keys.filter(k=>k.split('.').pop() < date).sort().pop();
     if(prev){
       const data = JSON.parse(localStorage.getItem(prev));
-      Object.keys(data).forEach(ex=> data[ex].forEach(s=> s.done=false));
-      writeForm(day,data);
-      saveForDate();
+      Object.keys(data).forEach(ex=>data[ex].forEach(s=>s.done=false));
+      writeForm(day,data); saveForDate();
     }
   });
 
@@ -586,8 +614,7 @@
     });
   }
 
-  loadForDate();
-  updateCounters();
+  loadForDate(); updateCounters();
 })();
 </script>
 </body>
