@@ -18,7 +18,7 @@
   *{box-sizing:border-box}
   html{height:100%;-webkit-text-size-adjust:100%}
   body{
-    min-height:100dvh; margin:0; overflow-x:hidden; /* жестко запрещаем горизонтальный скролл */
+    min-height:100dvh; margin:0; overflow-x:hidden;
     background:linear-gradient(180deg,#0d1117,#0f1319 45%,#10151b);
     color:var(--ink); font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
     padding-left:var(--s-left); padding-right:var(--s-right);
@@ -44,6 +44,7 @@
   .btn.ok{border-color:var(--ok);color:#d1fae5}
   .btn.warn{border-color:var(--warn);color:#fff7ed}
   .btn.danger{border-color:var(--danger);color:#fee2e2}
+  .btn.ghost{background:transparent}
 
   /* ===== ТАБЫ ===== */
   .tabs{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
@@ -68,7 +69,7 @@
   .ex-title{font-weight:700;margin:0 0 10px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .ex-title small{color:var(--muted);font-weight:500}
 
-  /* ===== ГРИДЫ СЕТОВ (без таблиц, без горизонтального скролла) ===== */
+  /* ===== ГРИДЫ СЕТОВ ===== */
   .legend, .set-row{
     display:grid; align-items:center; gap:8px;
     grid-template-columns:
@@ -95,7 +96,6 @@
   .setchk{display:flex;align-items:center;justify-content:center}
   .setchk input[type="checkbox"]{width:22px;height:22px}
 
-  /* Очень узкие ширины: ещё компактнее, но без горизонтального скролла */
   @media (max-width:380px){
     .legend, .set-row{
       grid-template-columns:
@@ -108,6 +108,26 @@
 
   .sumline{display:flex;gap:16px;flex-wrap:wrap;align-items:center;color:var(--muted);padding:12px 14px;border-top:1px dashed var(--line)}
   footer{margin:14px 0 10px calc(18px + var(--s-left));color:var(--muted)}
+
+  /* ===== МОДАЛКА АНАЛИТИКИ ===== */
+  .modal{
+    position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center;
+    padding:calc(12px + var(--s-top)) calc(12px + var(--s-right)) calc(12px + var(--s-bottom)) calc(12px + var(--s-left));
+    z-index:50;
+  }
+  .modal.open{display:flex}
+  .modal-card{
+    width:min(100%, 980px); max-height:80dvh; background:#0f141b; border:1px solid var(--line); border-radius:16px; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:#12161c;border-bottom:1px solid var(--line)}
+  .modal-body{padding:10px;overflow:auto}
+  .modal-actions{display:flex;gap:10px;padding:10px;border-top:1px solid var(--line)}
+  .table{width:100%;border-collapse:collapse;table-layout:fixed}
+  .table th,.table td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  .table th{color:#c9d4df;font-size:13px;text-transform:uppercase;letter-spacing:.6px;position:sticky;top:0;background:#0f141b}
+  .table td{font-size:14px}
+  .nowrap{white-space:nowrap}
 </style>
 
 <script>
@@ -124,14 +144,21 @@
 
       <div class="toolbar">
         <div><span class="muted">Дата:</span> <input id="logDate" type="date" aria-label="Дата тренировки"></div>
-        <div class="btn" id="exportBtn" role="button">Экспорт JSON</div>
-        <label class="btn" role="button" aria-label="Импорт JSON">
+
+        <div class="btn" id="makeFromLastBtn" title="Создать новый день на основе прошлого">Новый день из прошлого</div>
+
+        <div class="btn" id="exportBtn">Экспорт JSON</div>
+        <label class="btn" aria-label="Импорт JSON">
           Импорт JSON
           <input id="importInput" type="file" accept="application/json" style="display:none">
         </label>
-        <div class="btn warn" id="copyDayBtn" role="button">Скопировать прошлые веса</div>
-        <div class="btn danger" id="resetBtn" role="button">Сброс текущего дня</div>
-        <div class="btn ok" role="button" onclick="window.print()">Печать</div>
+
+        <div class="btn" id="exportCsvBtn" title="CSV за весь период">Экспорт CSV</div>
+        <div class="btn" id="analyticsBtn" title="Показать таблицу прогресса">Аналитика</div>
+
+        <div class="btn warn" id="copyDayBtn">Скопировать прошлые веса</div>
+        <div class="btn danger" id="resetBtn">Сброс текущего дня</div>
+        <div class="btn ok" onclick="window.print()">Печать</div>
       </div>
 
       <div class="tabs" role="tablist">
@@ -143,7 +170,7 @@
 
   <main>
     <!-- ===== ДЕНЬ 1 ===== -->
-    <section id="upper" class="day active" aria-labelledby="tab-upper">
+    <section id="upper" class="day active">
       <div class="block">
         <header>
           <div><strong>Верх тела</strong> <span class="tag">HIT</span></div>
@@ -151,130 +178,53 @@
         </header>
 
         <div class="exercises">
-          <!-- Жим гантелей наклон -->
           <div class="panel" data-ex="upper_press_incline">
             <div class="ex-title">1️⃣ Жим гантелей под углом (15–30°) <small>цель: 6–8 до отказа</small></div>
             <div class="legend"><div>Сет</div><div>Вес</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="number" step="0.5">
-              <input data-r type="number" min="1" max="12">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="number" step="0.5" value="20">
-              <input data-r type="number" min="1" max="12" value="7">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="number" step="0.5"><input data-r type="number" min="1" max="12"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="number" step="0.5" value="20"><input data-r type="number" min="1" max="12" value="7"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
 
-          <!-- Тяга верхнего блока / подтягивания -->
           <div class="panel" data-ex="upper_latpull_pullups">
             <div class="ex-title">2️⃣ Тяга верхнего блока / подтягивания <small>цель: 8–10</small></div>
             <div class="legend"><div>Сет</div><div>Вес/вариант</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="text" value="блок 30">
-              <input data-r type="number" min="1" max="20" value="10">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="text" value="блок 40 / подтяг. св.вес">
-              <input data-r type="number" min="1" max="20" value="9">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="text" value="блок 30"><input data-r type="number" min="1" max="20" value="10"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="text" value="блок 40 / подтяг. св.вес"><input data-r type="number" min="1" max="20" value="9"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
 
-          <!-- Жим тренажер грудь -->
           <div class="panel" data-ex="upper_chest_machine">
             <div class="ex-title">3️⃣ Жим тренажёр (грудь) <small>цель: 6–8</small></div>
             <div class="legend"><div>Сет</div><div>Вес</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="number" step="5" value="55">
-              <input data-r type="number" value="10">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="number" step="5" value="65">
-              <input data-r type="number" value="8">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="number" step="5" value="55"><input data-r type="number" value="10"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="number" step="5" value="65"><input data-r type="number" value="8"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
 
-          <!-- Тяга горизонтального троса -->
           <div class="panel" data-ex="upper_row_cable">
             <div class="ex-title">4️⃣ Тяга горизонтального троса <small>цель: 8–10</small></div>
             <div class="legend"><div>Сет</div><div>Вес</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="number" step="5" value="45">
-              <input data-r type="number" value="10">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="number" step="5" value="55">
-              <input data-r type="number" value="9">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="number" step="5" value="45"><input data-r type="number" value="10"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="number" step="5" value="55"><input data-r type="number" value="9"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
 
-          <!-- Армейский жим гантелей -->
           <div class="panel" data-ex="upper_shoulder_dbpress">
             <div class="ex-title">5️⃣ Армейский жим гантелей <small>цель: 6–8</small></div>
             <div class="legend"><div>Сет</div><div>Вес</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="number" step="0.5" value="12.5">
-              <input data-r type="number" value="8">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="number" step="0.5" value="15">
-              <input data-r type="number" value="8">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="number" step="0.5" value="12.5"><input data-r type="number" value="8"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="number" step="0.5" value="15"><input data-r type="number" value="8"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
 
-          <!-- Трицепс трос -->
           <div class="panel" data-ex="upper_triceps_rope">
             <div class="ex-title">6️⃣ Трицепс трос (верёвка) <small>цель: 10–12</small></div>
             <div class="legend"><div>Сет</div><div>Вес</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="number" step="2.5" value="20">
-              <input data-r type="number" value="10">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="number" step="2.5" value="25">
-              <input data-r type="number" value="11">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="number" step="2.5" value="20"><input data-r type="number" value="10"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="number" step="2.5" value="25"><input data-r type="number" value="11"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
 
-          <!-- Бицепс штанга -->
           <div class="panel" data-ex="upper_biceps_bar">
             <div class="ex-title">7️⃣ Бицепс штанга (EZ) <small>цель: 8–10</small></div>
             <div class="legend"><div>Сет</div><div>Вес</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="number" step="2.5" value="15">
-              <input data-r type="number" value="8">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="number" step="2.5" value="20">
-              <input data-r type="number" value="8">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="number" step="2.5" value="15"><input data-r type="number" value="8"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="number" step="2.5" value="20"><input data-r type="number" value="8"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
         </div>
 
@@ -286,7 +236,7 @@
     </section>
 
     <!-- ===== ДЕНЬ 2 ===== -->
-    <section id="lower" class="day" aria-labelledby="tab-lower">
+    <section id="lower" class="day">
       <div class="block">
         <header>
           <div><strong>Низ + корпус</strong> <span class="tag">HIT</span></div>
@@ -297,69 +247,29 @@
           <div class="panel" data-ex="lower_squat_legpress">
             <div class="ex-title">1️⃣ Присед со штангой / жим ногами <small>цель: 8–10</small></div>
             <div class="legend"><div>Сет</div><div>Вес</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="number" step="2.5" value="30">
-              <input data-r type="number" value="10">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="number" step="2.5" value="40">
-              <input data-r type="number" value="10">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="number" step="2.5" value="30"><input data-r type="number" value="10"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="number" step="2.5" value="40"><input data-r type="number" value="10"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
 
           <div class="panel" data-ex="lower_rdl">
             <div class="ex-title">2️⃣ Румынская тяга <small>цель: 8</small></div>
             <div class="legend"><div>Сет</div><div>Вес</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="number" step="2.5" value="25">
-              <input data-r type="number" value="8">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="number" step="2.5" value="35">
-              <input data-r type="number" value="8">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="number" step="2.5" value="25"><input data-r type="number" value="8"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="number" step="2.5" value="35"><input data-r type="number" value="8"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
 
           <div class="panel" data-ex="lower_calves">
             <div class="ex-title">3️⃣ Подъём на носки (икры) <small>цель: 15–20</small></div>
             <div class="legend"><div>Сет</div><div>Вес</div><div>Повторы</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Разминка</div>
-              <input data-w type="number" step="2.5" value="20">
-              <input data-r type="number" value="12">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Рабочий</div>
-              <input data-w type="number" step="2.5" value="30">
-              <input data-r type="number" value="16">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Разминка</div><input data-w type="number" step="2.5" value="20"><input data-r type="number" value="12"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Рабочий</div><input data-w type="number" step="2.5" value="30"><input data-r type="number" value="16"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
 
           <div class="panel" data-ex="lower_core_plank">
             <div class="ex-title">4️⃣ Кор: планка + вакуум</div>
             <div class="legend"><div>Сет</div><div>Вес/сек</div><div>Повторы/сек</div><div>Вып.</div></div>
-            <div class="set-row">
-              <div class="set-name">Планка</div>
-              <input data-w type="text" value="св. вес">
-              <input data-r type="text" value="45 сек">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
-            <div class="set-row">
-              <div class="set-name">Вакуум</div>
-              <input data-w type="text" value="дыхание">
-              <input data-r type="text" value="3×10 сек">
-              <label class="setchk"><input data-d type="checkbox"></label>
-            </div>
+            <div class="set-row"><div class="set-name">Планка</div><input data-w type="text" value="св. вес"><input data-r type="text" value="45 сек"><label class="setchk"><input data-d type="checkbox"></label></div>
+            <div class="set-row"><div class="set-name">Вакуум</div><input data-w type="text" value="дыхание"><input data-r type="text" value="3×10 сек"><label class="setchk"><input data-d type="checkbox"></label></div>
           </div>
         </div>
 
@@ -371,13 +281,30 @@
     </section>
   </main>
 
+  <!-- Модальное окно аналитики -->
+  <div class="modal" id="analyticsModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="anTitle">
+      <div class="modal-head">
+        <strong id="anTitle">Аналитика прогресса</strong>
+        <div class="muted">все сохранённые дни</div>
+      </div>
+      <div class="modal-body">
+        <div id="analyticsTableWrap"></div>
+      </div>
+      <div class="modal-actions">
+        <div class="btn" id="downloadCsvBtn">Скачать CSV</div>
+        <div class="btn ghost" id="closeAnalyticsBtn">Закрыть</div>
+      </div>
+    </div>
+  </div>
+
   <footer>
     Темп: 4с вверх / 4с вниз • Достиг верхней границы повторов → увеличь вес в следующий раз
   </footer>
 
 <script>
 (function(){
-  const VERSION = 'v5'; // новые ключи хранения, совместимо с экспортом
+  const VERSION = 'v7'; // новая версия; экспорт собирает ВСЕ версии bondHD.*
   const tabs = document.querySelectorAll('.tab');
   const days = document.querySelectorAll('.day');
   const logDate = document.getElementById('logDate');
@@ -385,6 +312,14 @@
   const importInput = document.getElementById('importInput');
   const resetBtn = document.getElementById('resetBtn');
   const copyDayBtn = document.getElementById('copyDayBtn');
+  const makeFromLastBtn = document.getElementById('makeFromLastBtn');
+  const exportCsvBtn = document.getElementById('exportCsvBtn');
+  const analyticsBtn = document.getElementById('analyticsBtn');
+
+  const analyticsModal = document.getElementById('analyticsModal');
+  const analyticsWrap  = document.getElementById('analyticsTableWrap');
+  const closeAnalyticsBtn = document.getElementById('closeAnalyticsBtn');
+  const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 
   function activeDayId(){ return document.querySelector('.tab.active').dataset.day }
   function storeKey(day, date){ return `bondHD.${VERSION}.${day}.${date}` }
@@ -395,17 +330,19 @@
   }
   logDate.value = todayISO();
 
+  // ---- вкладки
   tabs.forEach(t=>{
     t.addEventListener('click', ()=>{
       tabs.forEach(x=>{x.classList.remove('active'); x.setAttribute('aria-selected','false')});
       t.classList.add('active'); t.setAttribute('aria-selected','true');
       days.forEach(d=>d.classList.remove('active'));
       document.getElementById(t.dataset.day).classList.add('active');
-      loadForDate(); updateCounters();
+      loadForDate({fallbackToLast:false});
+      updateCounters();
     });
   });
 
-  // ==== сериализация карточек ====
+  // ---- форма
   function readForm(day){
     const root = document.getElementById(day);
     const panels = root.querySelectorAll('.panel[data-ex]');
@@ -419,7 +356,7 @@
           set: r.querySelector('.set-name')?.textContent.trim() ?? '',
           weight: r.querySelector('[data-w]')?.value ?? '',
           reps: r.querySelector('[data-r]')?.value ?? '',
-          done:  !!r.querySelector('[data-d]')?.checked
+          done: !!r.querySelector('[data-d]')?.checked
         });
       });
     });
@@ -443,6 +380,13 @@
     });
   }
 
+  function clearForm(day){
+    const root = document.getElementById(day);
+    root.querySelectorAll('[data-w]').forEach(i=>i.value='');
+    root.querySelectorAll('[data-r]').forEach(i=>i.value='');
+    root.querySelectorAll('[data-d]').forEach(c=>c.checked=false);
+  }
+
   function saveForDate(){
     const day = activeDayId();
     const date = logDate.value || todayISO();
@@ -452,31 +396,42 @@
     updateCounters();
   }
 
-  function loadForDate(){
+  function loadForDate({fallbackToLast} = {fallbackToLast:false}){
     const day = activeDayId();
     const date = logDate.value || todayISO();
     const raw = localStorage.getItem(storeKey(day,date));
-    if(raw){ writeForm(day, JSON.parse(raw)); }
-    else {
+    if(raw){ writeForm(day, JSON.parse(raw)); return; }
+    if(fallbackToLast){
       const last = localStorage.getItem(lastKey(day));
       if(last){
         const data = JSON.parse(last);
         Object.keys(data).forEach(ex=>data[ex].forEach(s=>s.done=false));
-        writeForm(day,data);
-      } else {
-        document.querySelectorAll('#'+day+' [data-d]').forEach(c=>c.checked=false);
+        writeForm(day,data); return;
       }
     }
+    clearForm(day);
   }
 
-  document.body.addEventListener('input', e=>{ if(e.target.matches('input')) saveForDate(); });
+  document.body.addEventListener('input', e=>{
+    if(e.target.matches('[data-w], [data-r]')) saveForDate();
+  });
   document.body.addEventListener('change', e=>{
-    if(e.target.matches('input[type="checkbox"], input[type="date"]')) {
-      if(e.target.type==='date') loadForDate();
-      saveForDate();
-    }
+    if(e.target.matches('input[type="date"]')) { loadForDate({fallbackToLast:false}); updateCounters(); return; }
+    if(e.target.matches('[data-d]')) saveForDate();
   });
 
+  // ---- кнопка: Новый день из прошлого (явно)
+  makeFromLastBtn.addEventListener('click', ()=>{
+    const day = activeDayId();
+    const last = localStorage.getItem(lastKey(day));
+    if(!last){ alert('Нет последнего дня для копирования. Заполни любой день и он станет шаблоном.'); return; }
+    const data = JSON.parse(last);
+    Object.keys(data).forEach(ex=>data[ex].forEach(s=>s.done=false)); // чекбоксы чистим
+    writeForm(day, data);
+    saveForDate(); // сохраняем под выбранной датой
+  });
+
+  // ---- экспорт JSON
   exportBtn.addEventListener('click', ()=>{
     const all = {};
     for(let i=0;i<localStorage.length;i++){
@@ -490,22 +445,140 @@
     a.click(); URL.revokeObjectURL(a.href);
   });
 
+  // ---- импорт JSON
   importInput.addEventListener('change', async (e)=>{
     const file = e.target.files[0]; if(!file) return;
     const text = await file.text(); const obj = JSON.parse(text);
     Object.keys(obj).forEach(k=>{ if(k.startsWith('bondHD.')) localStorage.setItem(k, obj[k]); });
-    loadForDate(); updateCounters(); importInput.value='';
+    loadForDate({fallbackToLast:false}); updateCounters(); importInput.value='';
   });
 
+  // ---- копировать прошлые веса (по дате)
   copyDayBtn.addEventListener('click', ()=>{
     const day = activeDayId(); const date = logDate.value || todayISO();
-    const keys = Object.keys(localStorage).filter(k=>k.startsWith(`bondHD.${VERSION}.${day}.20`));
+    const keys = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('bondHD.') && k.includes(`.${day}.`) && /\d{4}-\d{2}-\d{2}$/.test(k)) keys.push(k);
+    }
     const prev = keys.filter(k=>k.split('.').pop() < date).sort().pop();
     if(prev){
       const data = JSON.parse(localStorage.getItem(prev));
       Object.keys(data).forEach(ex=>data[ex].forEach(s=>s.done=false));
       writeForm(day,data); saveForDate();
+    } else {
+      alert('Нет более раннего дня для копирования.');
     }
+  });
+
+  // ---- Экспорт CSV + Аналитика
+  function collectAllRows(){
+    const rows = [];
+    for(let i=0;i<localStorage.length;i++){
+      const key = localStorage.key(i);
+      if(!key || !key.startsWith('bondHD.')) continue;
+      if(key.endsWith('.LAST')) continue;
+      // формат: bondHD.{ver}.{day}.{YYYY-MM-DD}
+      const parts = key.split('.');
+      const day = parts[2]; const date = parts[3];
+      if(!/\d{4}-\d{2}-\d{2}/.test(date)) continue;
+
+      try{
+        const data = JSON.parse(localStorage.getItem(key) || '{}');
+        Object.entries(data).forEach(([exercise, sets])=>{
+          (sets||[]).forEach(s=>{
+            rows.push({
+              date, day,
+              exercise,
+              set: s.set ?? '',
+              weight: (s.weight ?? '').toString().replace(/\s+/g,' ').trim(),
+              reps: (s.reps ?? '').toString().replace(/\s+/g,' ').trim(),
+              done: s.done ? 1 : 0
+            });
+          });
+        });
+      }catch(e){}
+    }
+    // сортировка по дате и дню
+    rows.sort((a,b)=> (a.date+b.day).localeCompare(b.date+b.day));
+    return rows;
+  }
+
+  function toCsv(rows){
+    const head = ['date','day','exercise','set','weight','reps','done'];
+    const escape = v => `"${String(v).replaceAll(`"`,`""`)}"`;
+    const body = rows.map(r => head.map(h => escape(r[h]??'')).join(',')).join('\n');
+    return head.join(',') + '\n' + body;
+  }
+
+  exportCsvBtn.addEventListener('click', ()=>{
+    const rows = collectAllRows();
+    if(!rows.length){ alert('Пока нет сохранённых данных.'); return; }
+    const csv = toCsv(rows);
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `bond_hd_history_${todayISO()}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  analyticsBtn.addEventListener('click', ()=>{
+    const rows = collectAllRows();
+    const wrap = document.createElement('div');
+    const table = document.createElement('table');
+    table.className = 'table';
+    table.innerHTML =
+      `<thead><tr>
+        <th class="nowrap">Дата</th><th class="nowrap">День</th><th>Упражнение</th>
+        <th>Сет</th><th class="nowrap">Вес</th><th class="nowrap">Повт.</th><th class="nowrap">Вып.</th>
+      </tr></thead><tbody></tbody>`;
+    const tb = table.querySelector('tbody');
+
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        `<td class="nowrap">${r.date}</td>
+         <td class="nowrap">${r.day==='upper'?'Верх':'Низ'}</td>
+         <td>${r.exercise}</td>
+         <td>${r.set}</td>
+         <td class="nowrap">${r.weight}</td>
+         <td class="nowrap">${r.reps}</td>
+         <td class="nowrap">${r.done}</td>`;
+      tb.appendChild(tr);
+    });
+
+    if(!rows.length){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="7" class="muted">Нет сохранённых записей</td>`;
+      tb.appendChild(tr);
+    }
+
+    wrap.appendChild(table);
+    analyticsWrap.innerHTML = '';
+    analyticsWrap.appendChild(wrap);
+    analyticsModal.classList.add('open');
+    analyticsModal.setAttribute('aria-hidden','false');
+  });
+
+  closeAnalyticsBtn.addEventListener('click', ()=>{
+    analyticsModal.classList.remove('open');
+    analyticsModal.setAttribute('aria-hidden','true');
+  });
+
+  downloadCsvBtn.addEventListener('click', ()=>{
+    const rows = collectAllRows();
+    if(!rows.length){ alert('Пока нет данных для выгрузки.'); return; }
+    const csv = toCsv(rows);
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `bond_hd_history_${todayISO()}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    clearForm(activeDayId());
+    saveForDate();
   });
 
   function updateCounters(){
@@ -518,7 +591,9 @@
     });
   }
 
-  loadForDate(); updateCounters();
+  // первая загрузка
+  loadForDate({fallbackToLast:true});
+  updateCounters();
 })();
 </script>
 </body>
